@@ -1,0 +1,49 @@
+syntax = "proto3";
+package pb;
+option go_package = "./pb";
+
+// import "exp.proto";
+
+message Grid {
+    int32 ID = 1;
+    int32 X = 2;
+    int32 Y = 3;
+}
+
+message UserInfo {
+    string Pk = 1;
+    string Sk = 2;
+    int64 UserID = 3;
+    int32 CreatedAt = 4;
+    int32 DeletedAt = 5;
+    int32 LastLoginAt = 6;
+    map<string, int32> Plunder = 7;
+    map<string, Grid> Maps = 8;
+    int64 Version = 9;
+    string Username = 10;
+}
+  
+message ReqCreate {
+    int64 Username = 1;
+}
+
+message ResCreate {
+    UserInfo UserInfo = 2;
+}
+message ReqGet {
+    int64 Username = 1;
+}
+
+message ResGet {
+    UserInfo UserInfo = 2;
+}
+
+message ReqUpdate {
+    int64 Username = 1;
+}
+
+message ResUpdate {
+    UserInfo UserInfo = 2;
+}
+
+
