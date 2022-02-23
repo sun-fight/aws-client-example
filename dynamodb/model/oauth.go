@@ -5,6 +5,7 @@ import (
 	"aws-client-example/dynamodb/pb"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
@@ -27,11 +28,7 @@ func GetOauthPk(username string) string {
 	return PkOauth + username
 }
 
-func GetOauthPkMap(id int64) map[string]types.AttributeValue {
-	return GetPkSkMap(PkOauth, id)
-}
-
-func CreateOauth(oauth *pb.TableOauth) (err error) {
+func OauthRegister(oauth *pb.TableOauth) (err error) {
 	createdAt := int32(time.Now().Unix())
 	oauth.CreatedAt = createdAt
 	oauth.Version = 1
@@ -81,6 +78,38 @@ func CreateOauth(oauth *pb.TableOauth) (err error) {
 			},
 		},
 	})
+	return
+}
+
+func LoginByUsername(username string) (user User, err error) {
+	return login(&pb.TableOauth{
+		Pk: GetOauthPk(username),
+		Sk: GetOauthPk(username),
+	})
+}
+
+func login(oauth *pb.TableOauth) (user User, err error) {
+	dao := mdynamodb.NewItemDao(TableName)
+	_, err = dao.GetItem(mdynamodb.ReqGetItem{
+		Key:            GetPkSkMap(oauth.Pk, oauth.Sk),
+		ConsistentRead: aws.Bool(true),
+	}, &oauth)
+
+	if err != nil {
+		return
+	}
+	tableUser := &pb.TableUser{
+		Pk: GetUserPk(oauth.UserID),
+		Sk: GetUserPk(oauth.UserID),
+	}
+	_, err = dao.GetItem(mdynamodb.ReqGetItem{
+		Key:            GetPkSkMap(tableUser.Pk, tableUser.Sk),
+		ConsistentRead: aws.Bool(true),
+	}, &tableUser)
+	if err != nil {
+		return
+	}
+	user.TableUser = tableUser
 	return
 }
 

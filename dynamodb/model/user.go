@@ -8,7 +8,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/sun-fight/aws-client/mdynamodb"
 )
 
@@ -37,10 +36,6 @@ func GetUserPk(id int64) string {
 
 func GetUserNameKey(username string) string {
 	return _gsiOneUsername + username
-}
-
-func GetUserPkMap(id int64) map[string]types.AttributeValue {
-	return GetPkSkMap(PkUser, id)
 }
 
 func (item *User) CreateUserInfo(userInfo *pb.TableUser) (err error) {

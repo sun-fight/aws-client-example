@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"aws-client-example/dynamodb/initial"
@@ -19,8 +20,19 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// 注册
 	username := "a1234"
+	// register(username)
+	//登录
+	user, err := model.LoginByUsername(username)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(user)
+}
+
+func register(username string) {
+	var err error
+	// 注册
 	if !ureg.Username(username) {
 		log.Fatal("username")
 	}
@@ -29,9 +41,8 @@ func main() {
 		Sk:     model.GetOauthPk(username),
 		UserID: uid.Gen64Def(),
 	}
-	err = model.CreateOauth(oauth)
+	err = model.OauthRegister(oauth)
 	if err != nil {
 		log.Fatal(err)
 	}
-	//
 }

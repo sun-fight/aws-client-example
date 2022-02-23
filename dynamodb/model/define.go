@@ -36,11 +36,10 @@ func GetPkMap(pkKey string, userID int64) map[string]types.AttributeValue {
 		"Pk": &types.AttributeValueMemberS{Value: pkKey + cast.ToString(userID)}}
 }
 
-func GetPkSkMap(pkKey string, userID int64) map[string]types.AttributeValue {
-	attr := &types.AttributeValueMemberS{Value: pkKey + cast.ToString(userID)}
+func GetPkSkMap(pk, sk string) map[string]types.AttributeValue {
 	return map[string]types.AttributeValue{
-		"Pk": attr,
-		"Sk": attr}
+		"Pk": &types.AttributeValueMemberS{Value: pk},
+		"Sk": &types.AttributeValueMemberS{Value: sk}}
 }
 
 func SetToUpdateBuilder(set *pb.ExpUpdateSet, value expression.ValueBuilder, updateBuilder expression.UpdateBuilder) expression.UpdateBuilder {
