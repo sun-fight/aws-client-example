@@ -1,13 +1,15 @@
 package model
 
 import (
+	"aws-client-example/dynamodb/define/derr"
+	"aws-client-example/dynamodb/pb"
+	"time"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/sun-fight/aws-client/mdynamodb"
-	"github.com/sun-fight/aws-client/mdynamodb/example/define/derr"
-	"github.com/sun-fight/aws-client/mdynamodb/pb"
 )
 
 const (
@@ -16,14 +18,15 @@ const (
 )
 
 type User struct {
-	*pb.UserInfo
+	*pb.TableUser
 }
 
-func NewUser(userInfo *pb.UserInfo) *User {
+func NewUser(user *pb.TableUser) *User {
 	return &User{
-		UserInfo: userInfo,
+		TableUser: user,
 	}
 }
+
 func NewUserDao() *User {
 	return &User{}
 }
@@ -32,24 +35,30 @@ func GetUserPk(id int64) string {
 	return GetPk(PkUser, id)
 }
 
+func GetUserNameKey(username string) string {
+	return _gsiOneUsername + username
+}
+
 func GetUserPkMap(id int64) map[string]types.AttributeValue {
 	return GetPkSkMap(PkUser, id)
 }
 
-func (item *User) CreateUserInfo(userInfo *pb.UserInfo) (err error) {
-	var keyB expression.ConditionBuilder
-	keyB = keyB.And(expression.Name(GsiOnePk).AttributeNotExists()).
-		And(expression.Name(Pk).AttributeNotExists())
-	exp, err := expression.NewBuilder().WithCondition(keyB).Build()
+func (item *User) CreateUserInfo(userInfo *pb.TableUser) (err error) {
+	userInfo.CreatedAt = int32(time.Now().Unix())
+	userInfo.LastLoginAt = userInfo.CreatedAt
+	userInfo.Version = 1
+
+	cond := expression.Name(Pk).AttributeNotExists()
+	exp, err := expression.NewBuilder().WithCondition(cond).Build()
 	if err != nil {
 		return
 	}
-	itemMap, err := attributevalue.MarshalMap(&item.UserInfo)
+	itemMap, err := attributevalue.MarshalMap(&userInfo)
 	if err != nil {
 		return
 	}
 	dao := mdynamodb.NewItemDao(TableName)
-	dao.PutItem(mdynamodb.ReqPutItem{
+	_, err = dao.PutItem(mdynamodb.ReqPutItem{
 		ItemMap:                   itemMap,
 		ConditionExpression:       exp.Condition(),
 		ExpressionAttributeNames:  exp.Names(),
@@ -109,9 +118,9 @@ func (item *User) NameToVal(name string) (vv expression.ValueBuilder, err error)
 	case "Version":
 		val = item.Version
 	case "DeletedAt":
-		val = item.UserInfo.DeletedAt
+		val = item.TableUser.DeletedAt
 	case "LastLoginAt":
-		val = item.UserInfo.LastLoginAt
+		val = item.TableUser.LastLoginAt
 	default:
 		err = derr.NewErrNamtToVal(name)
 		return

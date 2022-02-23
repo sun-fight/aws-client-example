@@ -1,10 +1,12 @@
 package model
 
 import (
+	"aws-client-example/dynamodb/pb"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/spf13/cast"
-	"github.com/sun-fight/aws-client/mdynamodb/pb"
 )
 
 const (
@@ -20,6 +22,10 @@ const (
 	GsiTwoName      = "gsi-two"
 	GsiInvertedName = "gsi-inverted"
 )
+
+func GetTableName() *string {
+	return aws.String(TableName)
+}
 
 func GetPk(pkKey string, userID int64) string {
 	return pkKey + cast.ToString(userID)

@@ -10,6 +10,30 @@ message Grid {
     int32 Y = 3;
 }
 
+message TableOauth {
+    string Pk = 1;
+    string Sk = 2;
+    int64 UserID = 3;
+    int32 CreatedAt = 4;
+    int64 Version = 5;
+
+}
+
+message TableUser {
+    string Pk = 1;
+    string Sk = 2;
+    int64 UserID = 3;
+    int32 CreatedAt = 4;
+    int32 DeletedAt = 5;
+    int32 LastLoginAt = 6;
+    map<string, int32> Plunder = 7;
+    map<string, Grid> Maps = 8;
+    int64 Version = 9;
+    string GsiOnePk = 10; //用户名
+    string GsiOneSk = 11; //用户名
+    string GsiTwoPk = 12;
+}
+
 message UserInfo {
     string Pk = 1;
     string Sk = 2;
@@ -20,7 +44,7 @@ message UserInfo {
     map<string, int32> Plunder = 7;
     map<string, Grid> Maps = 8;
     int64 Version = 9;
-    string Username = 10;
+    string GsiOnePk = 10; //用户名
 }
   
 message ReqCreate {

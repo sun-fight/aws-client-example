@@ -3,12 +3,15 @@ package main
 import (
 	"log"
 
-	"github.com/sun-fight/aws-client/mdynamodb/example/initial"
-	"github.com/sun-fight/aws-client/mdynamodb/example/model"
-	"github.com/sun-fight/aws-client/mdynamodb/pb"
+	"aws-client-example/dynamodb/initial"
+	"aws-client-example/dynamodb/model"
+	"aws-client-example/dynamodb/pb"
+	"aws-client-example/dynamodb/utils/uid"
+	"aws-client-example/dynamodb/utils/ureg"
 )
 
 func main() {
+	uid.Init()
 
 	var err error
 	err = initial.InitAwsService()
@@ -16,9 +19,19 @@ func main() {
 		log.Fatal(err)
 	}
 
-	userInfo := &pb.UserInfo{}
-	err = model.NewUserDao().CreateUserInfo(userInfo)
+	// 注册
+	username := "a1234"
+	if !ureg.Username(username) {
+		log.Fatal("username")
+	}
+	oauth := &pb.TableOauth{
+		Pk:     model.GetOauthPk(username),
+		Sk:     model.GetOauthPk(username),
+		UserID: uid.Gen64Def(),
+	}
+	err = model.CreateOauth(oauth)
 	if err != nil {
 		log.Fatal(err)
 	}
+	//
 }
