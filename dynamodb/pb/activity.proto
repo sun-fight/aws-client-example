@@ -1,0 +1,12 @@
+syntax = "proto3";
+package pb;
+option go_package = "./pb";
+
+import "exp.proto";
+
+message TableRank {
+    string Pk = 1; //user_id
+    string Sk = 2; //name
+    int32 CreatedAt = 4; //
+    int64 Version = 5;
+}

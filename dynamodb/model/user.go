@@ -20,12 +20,6 @@ type User struct {
 	*pb.TableUser
 }
 
-func NewUser(user *pb.TableUser) *User {
-	return &User{
-		TableUser: user,
-	}
-}
-
 func NewUserDao() *User {
 	return &User{}
 }
@@ -38,7 +32,7 @@ func GetUserNameKey(username string) string {
 	return _gsiOneUsername + username
 }
 
-func (item *User) CreateUserInfo(userInfo *pb.TableUser) (err error) {
+func CreateUserInfo(userInfo *pb.TableUser) (err error) {
 	userInfo.CreatedAt = int32(time.Now().Unix())
 	userInfo.LastLoginAt = userInfo.CreatedAt
 	userInfo.Version = 1
@@ -71,7 +65,7 @@ func GetUserInfo(username string) (res *pb.UserInfo, err error) {
 	}
 	dao := mdynamodb.NewItemDao(TableName)
 	out, err := dao.Query(mdynamodb.ReqQueryInput{
-		IndexName:                 aws.String(GsiOneName),
+		IndexName:                 aws.String(GsiOneIdx),
 		KeyConditionExpression:    exp.KeyCondition(),
 		ExpressionAttributeNames:  exp.Names(),
 		ExpressionAttributeValues: exp.Values(),
@@ -80,6 +74,49 @@ func GetUserInfo(username string) (res *pb.UserInfo, err error) {
 		return
 	}
 	err = attributevalue.UnmarshalMap(out.Items[0], &res)
+	return
+}
+
+func (item *User) UpdateUserInfo(user *pb.TableUser, updateCond pb.UpdateCondition) (err error) {
+	item.TableUser = user
+
+	updateCond.ExpUpdateItems = AddVersion(updateCond.ExpUpdateItems)
+	updateBuilder, err := item.ToUpdateBuilder(updateCond.ExpUpdateItems)
+	if err != nil {
+		return
+	}
+	condition := expression.AttributeExists(expression.Name(Pk)).
+		And(expression.Equal(expression.Name("Version"), expression.Value(item.Version)))
+	for _, v := range updateCond.ExpConditions {
+		condition, err = AddCondition(v, condition)
+		if err != nil {
+			return
+		}
+	}
+	exp, err := expression.NewBuilder().
+		WithUpdate(updateBuilder).
+		WithCondition(condition).
+		Build()
+	if err != nil {
+		return
+	}
+
+	dao := mdynamodb.NewItemDao(TableName)
+	_, err = dao.UpdateItem(mdynamodb.ReqUpdateItem{
+		Key:                       GetPkMap(user.Pk),
+		UpdateExpression:          exp.Update(),
+		ExpressionAttributeNames:  exp.Names(),
+		ExpressionAttributeValues: exp.Values(),
+		ConditionExpression:       exp.Condition(),
+	})
+	return
+}
+
+func (item *User) Delete(pk string) (err error) {
+	dao := mdynamodb.NewItemDao(TableName)
+	_, err = dao.DeleteItem(mdynamodb.ReqDeleteItem{
+		Key: GetPkMap(pk),
+	})
 	return
 }
 
@@ -92,10 +129,16 @@ func (item *User) ToUpdateBuilder(updateItems []*pb.ExpUpdateItem) (updateBuilde
 		switch v.OperationMode {
 		case pb.EnumExpUpdateOperationMode_OperationModeSet:
 			for _, set := range v.ExpUpdateSets {
-				value, err2 := item.NameToVal(set.Name)
-				if err2 != nil {
-					err = err2
-					return
+				var value expression.ValueBuilder
+				var err2 error
+				if set.Value != "" {
+					value = ValToBuilder(set.ValType, set.Value)
+				} else {
+					value, err2 = item.NameToVal(set.Name)
+					if err2 != nil {
+						err = err2
+						return
+					}
 				}
 				updateBuilder = SetToUpdateBuilder(set, value, updateBuilder)
 			}

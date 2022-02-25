@@ -2,6 +2,12 @@ syntax = "proto3";
 package pb;
 option go_package = "./pb";
 
+enum EnumExpValType {
+    ValTypeNone = 0;
+    ValTypeI64 = 2;
+    ValTypeStr = 3;
+}
+
 enum EnumExpUpdateOperationMode {
     OperationModeNone = 0;
     OperationModeAdd = 1;
@@ -23,9 +29,52 @@ enum EnumExpUpdateSetValMode {
 message ExpUpdateSet {
     string Name = 1;
     EnumExpUpdateSetValMode SetValMode = 2;
+    string Value = 3;
+    EnumExpValType ValType = 4;
 }
 
 message ExpUpdateItem {
     EnumExpUpdateOperationMode OperationMode = 1;
     repeated ExpUpdateSet ExpUpdateSets = 2;
+}
+
+// conditionMode https://github.com/aws/aws-sdk-go-v2/blob/main/feature/dynamodb/expression/condition.go
+enum EnumExpLogicalMode {
+    LogicalModeNone = 0;
+    LogicalModeAnd = 1;
+    LogicalModeOr = 2;
+    LogicalModeNot = 3;
+}
+
+enum EnumExpConditionMode {
+    ConditionModeNone = 0;
+    ConditionModeEqual = 1;
+    ConditionModeNotEqualCond = 2;
+    ConditionModeLessThan = 3;
+    ConditionModeLessThanEqual = 4;
+    ConditionModeGreaterThan = 5;
+    ConditionModeGreaterThanEqual = 6;
+    ConditionModeAnd = 7;
+    ConditionModeOr = 8;
+    ConditionModeNot = 9;
+    ConditionModeBetween = 10;
+    ConditionModeIn = 11;
+    ConditionModeAttrExists = 12;
+    ConditionModeAttrNotExists = 13;
+    ConditionModeAttrType = 14;
+    ConditionModeBeginsWith = 15;
+    ConditionModeContains = 16;
+}
+
+message ExpCondition {
+    EnumExpConditionMode ConditionMode = 1;
+    EnumExpLogicalMode LogicalMode = 2;
+    string Name = 3;
+    string Value = 4;
+    EnumExpValType ValType = 5;
+}
+
+message UpdateCondition {
+    repeated ExpUpdateItem ExpUpdateItems = 2;
+    repeated ExpCondition ExpConditions = 3;
 }
