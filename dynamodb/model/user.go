@@ -58,14 +58,14 @@ func CreateUserInfo(userInfo *pb.TableUser) (err error) {
 
 func GetUserInfo(username string) (res *pb.UserInfo, err error) {
 	var keyB expression.KeyConditionBuilder
-	keyB = keyB.And(expression.Key(GsiOnePk).Equal(expression.Value(_gsiOneUsername + username)))
+	keyB = keyB.And(expression.Key(Gsi1Pk).Equal(expression.Value(_gsiOneUsername + username)))
 	exp, err := expression.NewBuilder().WithKeyCondition(keyB).Build()
 	if err != nil {
 		return
 	}
 	dao := mdynamodb.NewItemDao(TableName)
 	out, err := dao.Query(mdynamodb.ReqQueryInput{
-		IndexName:                 aws.String(GsiOneIdx),
+		IndexName:                 aws.String(GsiIdx1),
 		KeyConditionExpression:    exp.KeyCondition(),
 		ExpressionAttributeNames:  exp.Names(),
 		ExpressionAttributeValues: exp.Values(),
@@ -77,7 +77,7 @@ func GetUserInfo(username string) (res *pb.UserInfo, err error) {
 	return
 }
 
-func (item *User) UpdateUserInfo(user *pb.TableUser, updateCond pb.UpdateCondition) (err error) {
+func (item *User) UpdateUserInfo(user *pb.TableUser, updateCond *pb.UpdateCondition) (err error) {
 	item.TableUser = user
 
 	updateCond.ExpUpdateItems = AddVersion(updateCond.ExpUpdateItems)
@@ -103,7 +103,7 @@ func (item *User) UpdateUserInfo(user *pb.TableUser, updateCond pb.UpdateConditi
 
 	dao := mdynamodb.NewItemDao(TableName)
 	_, err = dao.UpdateItem(mdynamodb.ReqUpdateItem{
-		Key:                       GetPkMap(user.Pk),
+		Key:                       GetPkSkMap(user.Pk, user.Sk),
 		UpdateExpression:          exp.Update(),
 		ExpressionAttributeNames:  exp.Names(),
 		ExpressionAttributeValues: exp.Values(),
@@ -158,7 +158,7 @@ func (item *User) NameToVal(name string) (vv expression.ValueBuilder, err error)
 	case "DeletedAt":
 		val = item.TableUser.DeletedAt
 	case "LastLoginAt":
-		val = item.TableUser.LastLoginAt
+		val = time.Now().Unix()
 	default:
 		err = derr.NewErrNamtToVal(name)
 		return

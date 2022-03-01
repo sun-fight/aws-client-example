@@ -15,6 +15,8 @@ require (
 	google.golang.org/protobuf v1.27.1
 )
 
+replace github.com/sun-fight/aws-client => ../aws-client
+
 require (
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.10.0 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.4 // indirect

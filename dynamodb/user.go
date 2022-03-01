@@ -15,7 +15,7 @@ func register(username string) {
 		log.Fatal("username")
 	}
 	oauth := &pb.TableOauth{
-		Pk: model.GetOauthPk(username),
+		Pk: model.GetOauthPk(pb.EnumOauthT_OauthTUsername, username),
 	}
 	err = model.OauthRegister(oauth)
 	if err != nil {
@@ -39,7 +39,7 @@ func login(username string) {
 		fmt.Println(v)
 	}
 	// 修改用户信息
-	err = model.NewUserDao().UpdateUserInfo(user.TableUser, pb.UpdateCondition{
+	err = model.NewUserDao().UpdateUserInfo(user.TableUser, &pb.UpdateCondition{
 		ExpUpdateItems: []*pb.ExpUpdateItem{
 			{OperationMode: pb.EnumExpUpdateOperationMode_OperationModeSet,
 				ExpUpdateSets: []*pb.ExpUpdateSet{

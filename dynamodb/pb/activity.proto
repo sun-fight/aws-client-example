@@ -5,8 +5,9 @@ option go_package = "./pb";
 import "exp.proto";
 
 message TableRank {
-    string Pk = 1; //user_id
-    string Sk = 2; //name
+    string Pk = 1; //rank#date#2022-02-22
+    string Sk = 2; //score
+    string GsiSortPk = 3; // userid
     int32 CreatedAt = 4; //
     int64 Version = 5;
 }

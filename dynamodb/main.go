@@ -19,7 +19,7 @@ func main() {
 	// 用户
 	username := "a12341"
 	// register(username)
-	// login(username)
+	login(username)
 	//排行榜
 
 	select {}

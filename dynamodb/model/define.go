@@ -16,15 +16,19 @@ const (
 	Pk = "Pk"
 	Sk = "Sk"
 
-	GsiPk    = "Pk"
-	GsiSk    = "Sk"
-	GsiOnePk = "GsiOnePk"
-	GsiOneSk = "GsiOneSk"
+	GsiPk     = "Pk"
+	GsiSk     = "Sk"
+	Gsi1Pk    = "Gsi1Pk"
+	Gsi1Sk    = "Gsi1Sk"
+	Gsi2Pk    = "Gsi2Pk"
+	Gsi2Sk    = "Gsi2Sk"
+	Gsi3Pk    = "Gsi3Pk"
+	Gsi3Sk    = "Gsi3Sk"
+	GsiSortPk = "GsiSortPk"
 
-	GsiOneIdx       = "gsi-one"
-	GsiTwoIdx       = "gsi-two"
-	GsiNamePk       = "gsi-pk"
-	GsiNameInverted = "gsi-inverted"
+	GsiIdx1 = "GSI1"
+	GsiIdx2 = "GSI2"
+	GsiIdx3 = "GSI3"
 )
 
 func GetTableName() *string {
