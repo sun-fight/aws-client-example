@@ -3,6 +3,7 @@ package model
 import (
 	"aws-client-example/dynamodb/define/derr"
 	"aws-client-example/dynamodb/pb"
+	"aws-client-example/dynamodb/utils/uid"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -13,67 +14,39 @@ import (
 )
 
 const (
-	PkRank = "rank#"
+	PkPreOauth = "oauth#"
 )
 
-type Rank struct {
-	*pb.TableRank
+type Oauth struct {
+	*pb.TableOauth
 }
 
-func NewRankDao() *Rank {
-	return &Rank{}
+func NewOauthDao() *Oauth {
+	return &Oauth{}
 }
 
-func GetRankPk(t pb.EnumRankT, date string) string {
-	return PkRank + t.String() + "#" + date
+func GetOauthPk(t pb.EnumOauthT, username string) string {
+	return PkPreOauth + t.String() + "#" + username
 }
 
-//
-func (item *Rank) Update(pk string, userID int64, score int64) (err error) {
-	rank := &pb.TableRank{
-		Pk:        pk,
-		Sk:        GetUserPk(userID),
-		Gsi2Pk:    pk,
-		Gsi2Sk:    score,
-		CreatedAt: int32(time.Now().Unix()),
-	}
-	rankMap, err := attributevalue.MarshalMap(&rank)
-	if err != nil {
-		return
-	}
-	exp := GetPkExp()
-	// _, err = mdynamodb.NewItemDao(TableName).PutItem(mdynamodb.ReqPutItem{
-	// 	ItemMap:                   rankMap,
-	// 	ConditionExpression:       exp.Condition(),
-	// 	ExpressionAttributeNames:  exp.Names(),
-	// 	ExpressionAttributeValues: exp.Values(),
-	// })
-	_, err = mdynamodb.NewItemDao(TableName).UpdateItem(mdynamodb.ReqUpdateItem{
-		Key:                       GetPkSkMap(rank.Pk, rank.Sk),
-		ConditionExpression:       exp.Condition(),
-		ExpressionAttributeNames:  exp.Names(),
-		ExpressionAttributeValues: exp.Values(),
-	})
-	return
-}
-
-func (item *Rank) GetTop(rankName string) (res []Rank, err error) {
-	cond := expression.Key(Pk).Equal(expression.Value(rankName))
+func (item *Oauth) GetUserOauths(userPk string) (res []Oauth, err error) {
+	cond := expression.Key(Gsi1Pk).Equal(expression.Value(userPk)).
+		And(expression.KeyBeginsWith(expression.Key(Gsi1Sk), PkPreOauth))
 	exp, err := expression.NewBuilder().WithKeyCondition(cond).Build()
 	if err != nil {
 		return
 	}
 	out, err := mdynamodb.NewItemDao(TableName).Query(mdynamodb.ReqQueryInput{
+		IndexName:                 aws.String(GsiIdx1),
 		KeyConditionExpression:    exp.KeyCondition(),
 		ExpressionAttributeNames:  exp.Names(),
 		ExpressionAttributeValues: exp.Values(),
-		ScanIndexForward:          aws.Bool(true),
 	})
 	if err != nil {
 		return
 	}
 	for _, v := range out.Items {
-		var m Rank
+		var m Oauth
 		err = attributevalue.UnmarshalMap(v, &m)
 		if err != nil {
 			return
@@ -83,28 +56,31 @@ func (item *Rank) GetTop(rankName string) (res []Rank, err error) {
 	return
 }
 
-func UpdateScore(oauth *pb.TableRank) (err error) {
-	createdAt := int32(time.Now().Unix())
+func OauthRegister(oauth *pb.TableOauth) (err error) {
+	nowTime := int32(time.Now().Unix())
+	userID := uid.Gen64Def()
+	userPk := GetUserPk(userID)
 
-	// oauth.Sk = GetUserPk(userID)
-	oauth.CreatedAt = createdAt
+	oauth.Sk = oauth.Pk
+	oauth.Gsi1Pk = userPk
+	oauth.Gsi1Sk = oauth.Pk
+	oauth.CreatedAt = nowTime
 	oauth.Version = 1
 
-	cond := expression.Name(Pk).AttributeNotExists()
-	exp, err := expression.NewBuilder().WithCondition(cond).Build()
-	if err != nil {
-		return
-	}
+	exp := GetPkExp()
 
 	oauthItemMap, err := attributevalue.MarshalMap(&oauth)
 	if err != nil {
 		return
 	}
 	userInfo := &pb.TableUser{
-		Pk: oauth.Sk,
-		// UserID:      userID,
-		CreatedAt:   createdAt,
-		LastLoginAt: createdAt,
+		Pk:          userPk,
+		Sk:          userPk,
+		Gsi1Pk:      userPk,
+		Gsi1Sk:      userPk,
+		UserID:      userID,
+		CreatedAt:   nowTime,
+		LastLoginAt: nowTime,
 		Version:     1,
 	}
 	userItemMap, err := attributevalue.MarshalMap(&userInfo)
@@ -137,7 +113,38 @@ func UpdateScore(oauth *pb.TableRank) (err error) {
 	return
 }
 
-func (item *Rank) ToUpdateBuilder(updateItems []*pb.ExpUpdateItem) (updateBuilder expression.UpdateBuilder, err error) {
+func LoginByUsername(username string) (user User, err error) {
+	return login(&pb.TableOauth{
+		Pk: GetOauthPk(pb.EnumOauthT_OauthTUsername, username),
+	})
+}
+
+func login(oauth *pb.TableOauth) (user User, err error) {
+	dao := mdynamodb.NewItemDao(TableName)
+	_, err = dao.GetItem(mdynamodb.ReqGetItem{
+		Key:            GetPkSkMap(oauth.Pk, oauth.Pk),
+		ConsistentRead: aws.Bool(true),
+	}, &oauth)
+	if err != nil {
+		return
+	}
+
+	tableUser := &pb.TableUser{
+		Pk: oauth.Gsi1Pk,
+		Sk: oauth.Gsi1Pk,
+	}
+	_, err = dao.GetItem(mdynamodb.ReqGetItem{
+		Key:            GetPkSkMap(tableUser.Pk, tableUser.Pk),
+		ConsistentRead: aws.Bool(true),
+	}, &tableUser)
+	if err != nil {
+		return
+	}
+	user.TableUser = tableUser
+	return
+}
+
+func (item *Oauth) ToUpdateBuilder(updateItems []*pb.ExpUpdateItem) (updateBuilder expression.UpdateBuilder, err error) {
 	if len(updateItems) == 0 {
 		err = derr.ErrUpdateItemNoSet
 		return
@@ -161,7 +168,7 @@ func (item *Rank) ToUpdateBuilder(updateItems []*pb.ExpUpdateItem) (updateBuilde
 	return
 }
 
-func (item *Rank) NameToVal(name string) (vv expression.ValueBuilder, err error) {
+func (item *Oauth) NameToVal(name string) (vv expression.ValueBuilder, err error) {
 	var val interface{}
 	switch name {
 	case "Version":
