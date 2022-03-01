@@ -31,6 +31,12 @@ const (
 	GsiIdx3 = "GSI3"
 )
 
+func GetPkExp() (exp expression.Expression) {
+	cond := expression.Name(Pk).AttributeNotExists()
+	exp, _ = expression.NewBuilder().WithCondition(cond).Build()
+	return
+}
+
 func GetTableName() *string {
 	return aws.String(TableName)
 }

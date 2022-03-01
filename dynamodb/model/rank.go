@@ -24,8 +24,37 @@ func NewRankDao() *Rank {
 	return &Rank{}
 }
 
-func GetRankPk(username string) string {
-	return PkRank + username
+func GetRankPk(t pb.EnumRankT, date string) string {
+	return PkRank + t.String() + "#" + date
+}
+
+//
+func (item *Rank) Update(pk string, userID int64, score int64) (err error) {
+	rank := &pb.TableRank{
+		Pk:        pk,
+		Sk:        GetUserPk(userID),
+		Gsi2Pk:    pk,
+		Gsi2Sk:    score,
+		CreatedAt: int32(time.Now().Unix()),
+	}
+	rankMap, err := attributevalue.MarshalMap(&rank)
+	if err != nil {
+		return
+	}
+	exp := GetPkExp()
+	// _, err = mdynamodb.NewItemDao(TableName).PutItem(mdynamodb.ReqPutItem{
+	// 	ItemMap:                   rankMap,
+	// 	ConditionExpression:       exp.Condition(),
+	// 	ExpressionAttributeNames:  exp.Names(),
+	// 	ExpressionAttributeValues: exp.Values(),
+	// })
+	_, err = mdynamodb.NewItemDao(TableName).UpdateItem(mdynamodb.ReqUpdateItem{
+		Key:                       GetPkSkMap(rank.Pk, rank.Sk),
+		ConditionExpression:       exp.Condition(),
+		ExpressionAttributeNames:  exp.Names(),
+		ExpressionAttributeValues: exp.Values(),
+	})
+	return
 }
 
 func (item *Rank) GetTop(rankName string) (res []Rank, err error) {

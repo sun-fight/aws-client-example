@@ -2,12 +2,17 @@ syntax = "proto3";
 package pb;
 option go_package = "./pb";
 
-import "exp.proto";
+enum EnumRankT {
+    RankTNone = 0;
+    RankTDay = 1;
+    RankTWeek = 2;
+}
 
 message TableRank {
-    string Pk = 1; //rank#date#2022-02-22
-    string Sk = 2; //score
-    string GsiSortPk = 3; // userid
-    int32 CreatedAt = 4; //
-    int64 Version = 5;
+    string Pk = 1; //rank#<t>#<date>
+    string Sk = 2; //user#<UserID>
+    string Gsi2Pk = 3;//rank#<t>#<date>
+    int64 Gsi2Sk = 4; //<ZeroPaddedScore>
+    int32 CreatedAt = 5;
+    int64 Version = 6;
 }

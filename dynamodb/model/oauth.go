@@ -67,11 +67,7 @@ func OauthRegister(oauth *pb.TableOauth) (err error) {
 	oauth.CreatedAt = nowTime
 	oauth.Version = 1
 
-	cond := expression.Name(Pk).AttributeNotExists()
-	exp, err := expression.NewBuilder().WithCondition(cond).Build()
-	if err != nil {
-		return
-	}
+	exp := GetPkExp()
 
 	oauthItemMap, err := attributevalue.MarshalMap(&oauth)
 	if err != nil {
