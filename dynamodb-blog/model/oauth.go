@@ -1,7 +1,6 @@
 package model
 
 import (
-	"aws-client-example/dynamodb/define/derr"
 	"aws-client-example/dynamodb/pb"
 	"aws-client-example/dynamodb/utils/uid"
 	"time"
@@ -146,7 +145,7 @@ func login(oauth *pb.TableOauth) (user User, err error) {
 
 func (item *Oauth) ToUpdateBuilder(updateItems []*pb.ExpUpdateItem) (updateBuilder expression.UpdateBuilder, err error) {
 	if len(updateItems) == 0 {
-		err = derr.ErrUpdateItemNoSet
+		err = ErrUpdateItemNoSet
 		return
 	}
 	for _, v := range updateItems {
@@ -161,7 +160,7 @@ func (item *Oauth) ToUpdateBuilder(updateItems []*pb.ExpUpdateItem) (updateBuild
 				updateBuilder = SetToUpdateBuilder(set, value, updateBuilder)
 			}
 		default:
-			err = derr.ErrUpdateItemOperationMode
+			err = ErrUpdateItemOperationMode
 			return
 		}
 	}
@@ -174,7 +173,7 @@ func (item *Oauth) NameToVal(name string) (vv expression.ValueBuilder, err error
 	case "Version":
 		val = item.Version
 	default:
-		err = derr.NewErrNamtToVal(name)
+		err = NewErrNameToVal(name)
 		return
 	}
 	return expression.Value(val), nil

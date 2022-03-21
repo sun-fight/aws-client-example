@@ -1,7 +1,6 @@
 package model
 
 import (
-	"aws-client-example/dynamodb/define/derr"
 	"aws-client-example/dynamodb/pb"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -78,7 +77,7 @@ func AddCondition(v *pb.ExpCondition, condition expression.ConditionBuilder) (co
 	case pb.EnumExpConditionMode_ConditionModeEqual:
 		where = expression.Name(v.Name).Equal(expression.Value(ValToInterface(v.ValType, v.Value)))
 	default:
-		err = derr.ErrConditionMode
+		err = ErrConditionMode
 		return
 	}
 	conditionRes = condition
@@ -88,7 +87,7 @@ func AddCondition(v *pb.ExpCondition, condition expression.ConditionBuilder) (co
 	case pb.EnumExpLogicalMode_LogicalModeOr:
 	case pb.EnumExpLogicalMode_LogicalModeNot:
 	default:
-		err = derr.ErrLogicalMode
+		err = ErrLogicalMode
 		return
 	}
 	return

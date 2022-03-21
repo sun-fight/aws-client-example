@@ -1,7 +1,6 @@
 package model
 
 import (
-	"aws-client-example/dynamodb/define/derr"
 	"aws-client-example/dynamodb/pb"
 	"time"
 
@@ -122,7 +121,7 @@ func (item *User) Delete(pk string) (err error) {
 
 func (item *User) ToUpdateBuilder(updateItems []*pb.ExpUpdateItem) (updateBuilder expression.UpdateBuilder, err error) {
 	if len(updateItems) == 0 {
-		err = derr.ErrUpdateItemNoSet
+		err = ErrUpdateItemNoSet
 		return
 	}
 	for _, v := range updateItems {
@@ -143,7 +142,7 @@ func (item *User) ToUpdateBuilder(updateItems []*pb.ExpUpdateItem) (updateBuilde
 				updateBuilder = SetToUpdateBuilder(set, value, updateBuilder)
 			}
 		default:
-			err = derr.ErrUpdateItemOperationMode
+			err = ErrUpdateItemOperationMode
 			return
 		}
 	}
@@ -160,7 +159,7 @@ func (item *User) NameToVal(name string) (vv expression.ValueBuilder, err error)
 	case "LastLoginAt":
 		val = time.Now().Unix()
 	default:
-		err = derr.NewErrNamtToVal(name)
+		err = NewErrNameToVal(name)
 		return
 	}
 	return expression.Value(val), nil

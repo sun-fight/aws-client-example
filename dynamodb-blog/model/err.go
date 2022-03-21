@@ -1,4 +1,4 @@
-package derr
+package model
 
 import "errors"
 
@@ -11,7 +11,7 @@ type ErrNameToVal struct {
 	Name string
 }
 
-func NewErrNamtToVal(name string) *ErrNameToVal {
+func NewErrNameToVal(name string) *ErrNameToVal {
 	return &ErrNameToVal{
 		Name: name,
 	}
